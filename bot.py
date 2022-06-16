@@ -1,5 +1,5 @@
 # To-Do Bot for Discord
-# Version 1.0 [6/15/22]
+# Version 1.1 [6/16/22]
 # Created by Nate MacLeod (natemacleod.github.io)
 
 import discord
@@ -8,13 +8,19 @@ import asyncio
 import motor
 import motor.motor_asyncio
 import os
+import re
 from dotenv import load_dotenv
 
 # -------- SETUP --------
 
+# Get data from .env
 load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 MONGO_CONN_STR = os.getenv('MONGO_CONN_STR')
+
+# Regexes for checking certain inputs
+intRegex = "^[0-9]+$"
+numberRegex = "^[0-9]+([.][0-9]+)?$"
 
 # MongoDB setup
 conn_str = MONGO_CONN_STR
@@ -79,8 +85,15 @@ async def add(ctx, task, date=False):
             await ctx.respond("Task " + str(task) + " added to list as task #" + str(len(tasks)) + ".")
 
 @bot.slash_command(name="addsubtask", description="Add a subtask to task #[task] on this server's list", guild_ids=[790243425567768638])
-async def addsubtask(ctx, task, subtask, date=False):
+async def addsubtask(ctx, id, subtask, date=False):
+    if re.search(intRegex, id) is None: 
+        await ctx.respond("`id` must be a positive integer.")
+        return
     id = int(id)
+    if id == 0:
+        await ctx.respond("`id` must be a positive integer.")
+        return
+
     gid = await getGID(ctx)
     if gid:
         doc = await db.lists.find_one({'id': gid})
@@ -134,7 +147,14 @@ async def list(ctx):
 # Removes a task from the list (needed for both /remove and /complete). 
 # Returns False if there is an error
 async def removetask(ctx, id):
+    if re.search(numberRegex, id) is None:
+        await ctx.respond("ID must be at least 1.")
+        return False
     id = float(id)
+    if id < 1:
+        await ctx.respond("ID must be at least 1.")
+        return False
+
     gid = await getGID(ctx)
     if gid:
         doc = await db.lists.find_one({'id': gid})
@@ -207,6 +227,9 @@ async def deletelist(ctx):
 
 @bot.slash_command(name="lb", description="Shows the leaderboard for the server", guild_ids=[790243425567768638])
 async def lb(ctx, top="10"):
+    if re.search(intRegex, top) is None:
+        await ctx.respond("`top` must be a positive integer.")
+        return
     gid = await getGID(ctx)
     if gid:
         doc = await db.lists.find_one({'id': gid})
