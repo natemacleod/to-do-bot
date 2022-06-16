@@ -1,5 +1,5 @@
-# to-do-bot
-A To-Do List bot for Discord
+# To-Do Bot
+A to-do list bot for Discord
 
 (Note: This bot is currently not active. To use it, follow the instructions below.)
 
